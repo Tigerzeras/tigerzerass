@@ -1,0 +1,77 @@
+rom gradio_client import Client, file
+import time
+import json
+
+# Establish connection to the running Fooocus instance
+client = Client("http://127.0.0.1:7865/")
+
+print("Submitting generation job...")
+# This first 'predict' call sends all the configuration parameters to Fooocus.
+# It corresponds to setting all the options in the UI before clicking 'Generate'.
+# The 'fn_index' is critical and corresponds to a specific API endpoint.
+# This index can change with Fooocus updates. For v2.5.5, it is 67.
+job = client.predict(
+	False,	# Generate Image Grid for Each Batch (Checkbox)
+	"a beautiful landscape, cinematic, hyperrealistic, 8k",	# Prompt (Textbox)
+	"ugly, blurry, bad art, watermark, text",	# Negative Prompt (Textbox)
+	,	# Selected Styles (Checkboxgroup)
+	"Quality",	# Performance (Radio)
+	"1152×896",	# Aspect Ratios (Radio)
+	1,	# Image Number (Slider)
+	"png",	# Output Format (Radio)
+	"-1",	# Seed (Textbox, -1 for random)
+	False,	# Read wildcards in order (Checkbox)
+	2,	# Image Sharpness (Slider)
+	4,	# Guidance Scale (Slider)
+	"juggernautXL_v8Rundiffusion.safetensors",	# Base Model (SDXL only) (Dropdown)
+	"None",	# Refiner (SDXL or SD 1.5) (Dropdown)
+	0.5,	# Refiner Switch At (Slider)
+	True,	# LoRA 1 Enable (Checkbox)
+	"sd_xl_offset_example-lora_1.0.safetensors",	# LoRA 1 (Dropdown)
+	0.1,	# LoRA 1 Weight (Slider)
+	True,	# LoRA 2 Enable (Checkbox)
+	"None",	# LoRA 2 (Dropdown)
+	1,	# LoRA 2 Weight (Slider)
+	True,	# LoRA 3 Enable (Checkbox)
+	"None",	# LoRA 3 (Dropdown)
+	1,	# LoRA 3 Weight (Slider)
+	True,	# LoRA 4 Enable (Checkbox)
+	"None",	# LoRA 4 (Dropdown)
+	1,	# LoRA 4 Weight (Slider)
+	True,	# LoRA 5 Enable (Checkbox)
+	"None",	# LoRA 5 (Dropdown)
+	1,	# LoRA 5 Weight (Slider)
+	False,	# Input Image (Checkbox)
+	"",	# (Unknown Textbox)
+	"Disabled",	# Upscale or Variation (Radio)
+	None,	# Upscale or Variation Image
+	["Left"],	# Outpaint Direction (Checkboxgroup)
+	None,	# Inpaint or Outpaint Image
+	"",	# Inpaint Additional Prompt (Textbox)
+	None,	# Inpaint or Outpaint Mask Upload (Image)
+	#... The remaining parameters are for advanced/developer settings.
+    # It is generally safe to leave them at their default values as shown in the reference.
+    # A full list can be derived from the API documentation page on the Fooocus web UI.
+	True, True, True, False, 1.5, 0.8, 0.3, 7, 2, "dpmpp_2m_sde_gpu", "karras", "Default (model)", -1, -1, -1, -1, -1, -1, False, False, False, False, 64, 128, "joint", 0.25, False, 1.01, 1.02, 0.99, 0.95, False, False, "v2.6", 1, 0.618, False, False, 0, False, False, "fooocus", None, 0, 0, "ImagePrompt", None, 0, 0, "ImagePrompt", None, 0, 0, "ImagePrompt", None, 0, 0, "ImagePrompt", False, 0, False, None, False, "Disabled", "Before First Enhancement", "Original Prompts", False, "", "", "", "sam", "full", "vit_b", 0.25, 0.3, 0, True, "v2.6", 1, 0.618, 0, False, False, "", "", "", "sam", "full", "vit_b", 0.25, 0.3, 0, True, "v2.6", 1, 0.618, 0, False, False, "", "", "", "sam", "full", "vit_b", 0.25, 0.3, 0, True, "v2.6", 1, 0.618, 0, False,
+	fn_index=67 # The index for the configuration submission endpoint.
+)
+
+print("Job submitted. Now triggering generation queue...")
+# This second 'predict' call has no parameters. It's equivalent to clicking the 'Generate' button
+# after all options have been set. It tells the server to start processing the job queue.
+# For Fooocus v2.5.5, the index for this action is 68.
+# The result will contain information about the generated files.
+result = client.predict(
+	fn_index=68
+)
+
+# The result is typically a JSON string. We parse it to access the file paths.
+output_data = json.loads(result)
+print("\nGeneration Complete!")
+print("Output data:")
+print(json.dumps(output_data, indent=2))
+
+# Example of how to access the generated file path
+if output_data and isinstance(output_data, list) and 'url' in output_data:
+    image_path = output_data['url']
+    print(f"\nGenerated image saved at: {image_path}")
